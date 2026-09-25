@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dice Market</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:#0e1b2d;
+      --panel-2:#13243a;
+      --line:rgba(255,255,255,.10);
+      --text:#f7fbff;
+      --muted:#8ea2bb;
+      --gold:#f6c453;
+      --gold-2:#ffdf8a;
+      --green:#5ee3a4;
+      --red:#ff7d8c;
+      --blue:#71b7ff;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(50,115,255,.16), transparent 28%),
+        radial-gradient(circle at 85% 12%, rgba(246,196,83,.11), transparent 24%),
+        linear-gradient(145deg,#050b14,#091728 60%,#07111f);
+    }
+
+    button,input,select{font:inherit}
+    button{touch-action:manipulation}
+
+    .app{
+      width:min(1180px,94vw);
+      margin:28px auto 44px;
+    }
+
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:flex-start;
+      margin-bottom:18px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+
+    .logo{
+      width:48px;height:48px;
+      border-radius:15px;
+      display:grid;place-items:center;
+      background:linear-gradient(145deg,var(--gold-2),var(--gold));
+      color:#231802;
+      font-weight:900;
+      box-shadow:0 10px 30px rgba(246,196,83,.25);
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(24px,4vw,38px);
+      letter-spacing:-.04em;
+    }
+
+    .sub{
+      margin-top:5px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .shell{
+      display:grid;
+      grid-template-columns: minmax(0,1.55fr) minmax(300px,.75fr);
+      gap:18px;
+    }
+
+    .card{
+      background:linear-gradient(180deg,rgba(18,35,57,.92),rgba(11,24,40,.94));
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+    }
+
+    .main-card{padding:20px}
+    .side-card{padding:18px}
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-bottom:20px;
+    }
+
+    .stat{
+      padding:14px;
+      background:rgba(255,255,255,.035);
+      border:1px solid var(--line);
+      border-radius:17px;
+    }
+
+    .stat .k{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:5px;
+    }
+
+    .stat .v{
+      font-size:clamp(19px,3vw,28px);
+      font-weight:800;
+      letter-spacing:-.03em;
+    }
+
+    .progress-wrap{
+      margin-bottom:20px;
+    }
+
+    .progress-top{
+      display:flex;
+      justify-content:space-between;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:7px;
+    }
+
+    .progress{
+      height:9px;
+      border-radius:99px;
+      overflow:hidden;
+      background:rgba(255,255,255,.07);
+    }
+
+    .progress > div{
+      height:100%;
+      width:0%;
+      border-radius:99px;
+      background:linear-gradient(90deg,var(--blue),var(--gold));
+      transition:width .35s ease;
+    }
+
+    .arena{
+      min-height:300px;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(113,183,255,.08), transparent 38%),
+        rgba(0,0,0,.12);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .dice-row{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:16px;
+      margin:8px 0 18px;
+      perspective:900px;
+    }
+
+    .die{
+      width:84px;
+      height:84px;
+      border-radius:19px;
+      background:linear-gradient(145deg,#ffffff,#e6edf5);
+      box-shadow:
+        inset 0 -5px 12px rgba(80,95,110,.18),
+        0 18px 28px rgba(0,0,0,.28);
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform .2s ease;
+    }
+
+    .die.rolling{
+      animation:tumble .72s cubic-bezier(.2,.75,.25,1);
+    }
+
+    @keyframes tumble{
+      0%{transform:rotateX(0deg) rotateY(0deg) translateY(0)}
+      30%{transform:rotateX(190deg) rotateY(130deg) translateY(-18px)}
+      60%{transform:rotateX(380deg) rotateY(310deg) translateY(-5px)}
+      100%{transform:rotateX(720deg) rotateY(540deg) translateY(0)}
+    }
+
+    .pip{
+      width:13px;height:13px;
+      border-radius:50%;
+      background:#0d1825;
+      position:absolute;
+      transform:translate(-50%,-50%);
+      box-shadow:inset 0 1px 2px rgba(255,255,255,.22);
+    }
+
+    .pos-tl{left:27%;top:27%}
+    .pos-tr{left:73%;top:27%}
+    .pos-ml{left:27%;top:50%}
+    .pos-c {left:50%;top:50%}
+    .pos-mr{left:73%;top:50%}
+    .pos-bl{left:27%;top:73%}
+    .pos-br{left:73%;top:73%}
+
+    .outcome{
+      text-align:center;
+      min-height:64px;
+    }
+
+    .outcome .big{
+      font-size:26px;
+      font-weight:850;
+      letter-spacing:-.03em;
+    }
+
+    .outcome .small{
+      color:var(--muted);
+      margin-top:5px;
+      font-size:14px;
+    }
+
+    .tickets{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin-top:18px;
+    }
+
+    .ticket{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.035);
+      border-radius:20px;
+      padding:17px;
+    }
+
+    .ticket-head{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:14px;
+      align-items:flex-start;
+    }
+
+    .ticket-title{
+      font-size:20px;
+      font-weight:850;
+      letter-spacing:-.02em;
+    }
+
+    .ticket-meta{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:4px;
+      line-height:1.4;
+    }
+
+    .badge{
+      padding:6px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .counter{
+      display:grid;
+      grid-template-columns:50px 1fr 50px;
+      align-items:center;
+      gap:10px;
+    }
+
+    .counter-value{
+      height:50px;
+      display:grid;
+      place-items:center;
+      border-radius:14px;
+      background:rgba(0,0,0,.18);
+      font-size:23px;
+      font-weight:800;
+    }
+
+    .icon-btn{
+      height:50px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#172943;
+      color:white;
+      cursor:pointer;
+      font-size:24px;
+      font-weight:700;
+      transition:.16s ease;
+    }
+
+    .icon-btn:hover:not(:disabled){
+      transform:translateY(-1px);
+      background:#1c3454;
+    }
+
+    button:disabled{
+      opacity:.28;
+      cursor:not-allowed;
+      transform:none !important;
+    }
+
+    .turn-summary{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin:14px 0;
+    }
+
+    .mini{
+      padding:12px;
+      border-radius:15px;
+      background:rgba(0,0,0,.15);
+      border:1px solid var(--line);
+    }
+
+    .mini .k{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.07em;
+    }
+
+    .mini .v{
+      margin-top:4px;
+      font-size:18px;
+      font-weight:750;
+    }
+
+    .primary{
+      width:100%;
+      min-height:56px;
+      border:none;
+      border-radius:16px;
+      background:linear-gradient(135deg,var(--gold-2),var(--gold));
+      color:#281b00;
+      font-weight:900;
+      font-size:17px;
+      cursor:pointer;
+      box-shadow:0 14px 26px rgba(246,196,83,.18);
+      transition:.18s ease;
+    }
+
+    .primary:hover:not(:disabled){
+      transform:translateY(-1px);
+      filter:brightness(1.03);
+    }
+
+    .secondary{
+      min-height:44px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border-radius:13px;
+      padding:0 14px;
+      cursor:pointer;
+    }
+
+    .config h2,.history h2{
+      margin:0 0 12px;
+      font-size:16px;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:block;
+    }
+
+    input,select{
+      width:100%;
+      margin-top:6px;
+      background:#091522;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:11px 12px;
+      outline:none;
+    }
+
+    input:focus,select:focus{
+      border-color:rgba(113,183,255,.75);
+      box-shadow:0 0 0 3px rgba(113,183,255,.12);
+    }
+
+    .config-actions{
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .note{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:18px 0;
+    }
+
+    .history-list{
+      max-height:410px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .history-item{
+      padding:11px 0;
+      border-bottom:1px solid var(--line);
+      display:grid;
+      grid-template-columns:44px 1fr auto;
+      gap:9px;
+      align-items:center;
+      font-size:13px;
+    }
+
+    .history-item:last-child{border-bottom:none}
+
+    .turn-pill{
+      width:40px;height:28px;
+      border-radius:9px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.06);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .hist-main strong{display:block}
+    .hist-main span{color:var(--muted);font-size:12px}
+
+    .delta.plus{color:var(--green)}
+    .delta.minus{color:var(--red)}
+
+    .empty{
+      color:var(--muted);
+      font-size:13px;
+      padding:8px 0;
+    }
+
+    .toast{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:13px;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+    }
+
+    .toast.win{
+      color:#c9ffe5;
+      background:rgba(94,227,164,.09);
+      border-color:rgba(94,227,164,.28);
+    }
+
+    .toast.lose{
+      color:#ffd6dc;
+      background:rgba(255,125,140,.08);
+      border-color:rgba(255,125,140,.25);
+    }
+
+    @media (max-width:900px){
+      .shell{grid-template-columns:1fr}
+      .side-card{order:2}
+    }
+
+    @media (max-width:650px){
+      .app{width:min(96vw,1180px);margin-top:14px}
+      .hero{align-items:center}
+      .stats{grid-template-columns:1fr 1fr}
+      .tickets{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr 1fr}
+      .turn-summary{grid-template-columns:1fr}
+      .die{width:68px;height:68px;border-radius:16px}
+      .pip{width:11px;height:11px}
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      *{scroll-behavior:auto!important}
+      .die.rolling{animation:none}
+      .primary,.icon-btn{transition:none}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="brand">
+        <div class="logo">DM</div>
+        <div>
+          <h1>Dice Market</h1>
+          <div class="sub">Build your bankroll. Choose your risk. Beat the target before time runs out.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="card main-card">
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Available cash</div>
+            <div class="v" id="bankroll">₹100</div>
+          </div>
+          <div class="stat">
+            <div class="k">Turn</div>
+            <div class="v"><span id="turn">1</span>/<span id="turnMax">50</span></div>
+          </div>
+          <div class="stat">
+            <div class="k">Target</div>
+            <div class="v" id="targetStat">₹25,000</div>
+          </div>
+          <div class="stat">
+            <div class="k">Invested</div>
+            <div class="v" id="investedStat">₹0</div>
+          </div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span>Bankroll progress</span>
+            <span id="progressText">0.4%</span>
+          </div>
+          <div class="progress"><div id="progressBar"></div></div>
+        </div>
+
+        <div class="arena">
+          <div class="dice-row" id="diceRow"></div>
+          <div class="outcome">
+            <div class="big" id="outcomeBig">Build your position</div>
+            <div class="small" id="outcomeSmall">Buy at least one ticket, then roll the dice.</div>
+          </div>
+        </div>
+
+        <div class="tickets">
+          <div class="ticket">
+            <div class="ticket-head">
+              <div>
+                <div class="ticket-title">EVEN</div>
+                <div class="ticket-meta"><span id="evenCostLabel">Costs ₹60</span> · <span id="evenRewardLabel">Pays ₹100</span></div>
+              </div>
+              <div class="badge">Product is even</div>
+            </div>
+
+            <div class="counter">
+              <button class="icon-btn" id="evenMinus" type="button" aria-label="Remove one EVEN ticket">−</button>
+              <div class="counter-value" id="evenCount">0</div>
+              <button class="icon-btn" id="evenPlus" type="button" aria-label="Buy one EVEN ticket">+</button>
+            </div>
+          </div>
+
+          <div class="ticket">
+            <div class="ticket-head">
+              <div>
+                <div class="ticket-title">ODD</div>
+                <div class="ticket-meta"><span id="oddCostLabel">Costs ₹30</span> · <span id="oddRewardLabel">Pays ₹100</span></div>
+              </div>
+              <div class="badge">Product is odd</div>
+            </div>
+
+            <div class="counter">
+              <button class="icon-btn" id="oddMinus" type="button" aria-label="Remove one ODD ticket">−</button>
+              <div class="counter-value" id="oddCount">0</div>
+              <button class="icon-btn" id="oddPlus" type="button" aria-label="Buy one ODD ticket">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="turn-summary">
+          <div class="mini">
+            <div class="k">Cash after purchases</div>
+            <div class="v" id="cashAfter">₹100</div>
+          </div>
+          <div class="mini">
+            <div class="k">If EVEN</div>
+            <div class="v" id="ifEven">₹100</div>
+          </div>
+          <div class="mini">
+            <div class="k">If ODD</div>
+            <div class="v" id="ifOdd">₹100</div>
+          </div>
+        </div>
+
+        <button class="primary" id="rollBtn" type="button">ROLL DICE</button>
+        <div class="toast" id="statusToast">Ticket purchases are deducted immediately. Remove a ticket before rolling to refund it.</div>
+      </div>
+
+      <aside class="card side-card">
+        <section class="config">
+          <h2>Game setup</h2>
+          <div class="form-grid">
+            <label>Starting money
+              <input id="cfgStart" type="number" min="1" step="10" value="100">
+            </label>
+            <label>Target
+              <input id="cfgTarget" type="number" min="1" step="10" value="25000">
+            </label>
+            <label>Turns
+              <input id="cfgTurns" type="number" min="1" max="500" step="1" value="50">
+            </label>
+            <label>Dice
+              <select id="cfgDice">
+                <option value="1">1 die</option>
+                <option value="2" selected>2 dice</option>
+                <option value="3">3 dice</option>
+                <option value="4">4 dice</option>
+                <option value="5">5 dice</option>
+                <option value="6">6 dice</option>
+              </select>
+            </label>
+            <label>EVEN cost
+              <input id="cfgEvenCost" type="number" min="1" step="1" value="60">
+            </label>
+            <label>ODD cost
+              <input id="cfgOddCost" type="number" min="1" step="1" value="30">
+            </label>
+            <label>EVEN payout
+              <input id="cfgEvenPayout" type="number" min="0" step="1" value="100">
+            </label>
+            <label>ODD payout
+              <input id="cfgOddPayout" type="number" min="0" step="1" value="100">
+            </label>
+          </div>
+
+          <div class="config-actions">
+            <button class="secondary" id="newGameBtn" type="button">Apply & New Game</button>
+            <button class="secondary" id="restartBtn" type="button">Restart</button>
+          </div>
+
+          <div class="note">
+            The game never displays the underlying EVEN/ODD probability. The outcome is determined only by the actual dice rolled.
+          </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <section class="history">
+          <h2>Round history</h2>
+          <div class="history-list" id="historyList">
+            <div class="empty">No rounds yet.</div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      bankroll:$("bankroll"),
+      turn:$("turn"),
+      turnMax:$("turnMax"),
+      targetStat:$("targetStat"),
+      investedStat:$("investedStat"),
+      progressText:$("progressText"),
+      progressBar:$("progressBar"),
+      diceRow:$("diceRow"),
+      outcomeBig:$("outcomeBig"),
+      outcomeSmall:$("outcomeSmall"),
+      evenCount:$("evenCount"),
+      oddCount:$("oddCount"),
+      evenPlus:$("evenPlus"),
+      evenMinus:$("evenMinus"),
+      oddPlus:$("oddPlus"),
+      oddMinus:$("oddMinus"),
+      cashAfter:$("cashAfter"),
+      ifEven:$("ifEven"),
+      ifOdd:$("ifOdd"),
+      rollBtn:$("rollBtn"),
+      statusToast:$("statusToast"),
+      historyList:$("historyList"),
+      newGameBtn:$("newGameBtn"),
+      restartBtn:$("restartBtn"),
+      evenCostLabel:$("evenCostLabel"),
+      oddCostLabel:$("oddCostLabel"),
+      evenRewardLabel:$("evenRewardLabel"),
+      oddRewardLabel:$("oddRewardLabel"),
+      cfgStart:$("cfgStart"),
+      cfgTarget:$("cfgTarget"),
+      cfgTurns:$("cfgTurns"),
+      cfgDice:$("cfgDice"),
+      cfgEvenCost:$("cfgEvenCost"),
+      cfgOddCost:$("cfgOddCost"),
+      cfgEvenPayout:$("cfgEvenPayout"),
+      cfgOddPayout:$("cfgOddPayout")
+    };
+
+    let cfg = {};
+    let state = {};
+    let rolling = false;
+
+    const pipMap = {
+      1:["c"],
+      2:["tl","br"],
+      3:["tl","c","br"],
+      4:["tl","tr","bl","br"],
+      5:["tl","tr","c","bl","br"],
+      6:["tl","tr","ml","mr","bl","br"]
+    };
+
+    const money = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+
+    function positiveInt(input, fallback, max = 1000000000){
+      const v = Math.floor(Number(input.value));
+      return Number.isFinite(v) && v > 0 ? Math.min(v,max) : fallback;
+    }
+
+    function readConfig(){
+      return {
+        start: positiveInt(els.cfgStart,100),
+        target: positiveInt(els.cfgTarget,25000),
+        turns: positiveInt(els.cfgTurns,50,500),
+        dice: positiveInt(els.cfgDice,2,6),
+        evenCost: positiveInt(els.cfgEvenCost,60),
+        oddCost: positiveInt(els.cfgOddCost,30),
+        evenPayout: Math.max(0, Math.floor(Number(els.cfgEvenPayout.value) || 0)),
+        oddPayout: Math.max(0, Math.floor(Number(els.cfgOddPayout.value) || 0))
+      };
+    }
+
+    function startGame(fromInputs = true){
+      if(fromInputs) cfg = readConfig();
+
+      state = {
+        bankroll: cfg.start,
+        turn: 1,
+        evenTickets: 0,
+        oddTickets: 0,
+        invested: 0,
+        history: [],
+        finished: false
+      };
+
+      rolling = false;
+      buildDice();
+      resetDiceVisuals();
+      els.outcomeBig.textContent = "Build your position";
+      els.outcomeSmall.textContent = "Buy at least one ticket, then roll the dice.";
+      setToast("Ticket purchases are deducted immediately. Remove a ticket before rolling to refund it.");
+      render();
+    }
+
+    function buildDice(){
+      els.diceRow.innerHTML = "";
+      for(let i=0;i<cfg.dice;i++){
+        const die = document.createElement("div");
+        die.className = "die";
+        die.dataset.value = "1";
+        die.setAttribute("aria-label", `Die ${i+1}`);
+        els.diceRow.appendChild(die);
+        setDieFace(die, 1);
+      }
+    }
+
+    function resetDiceVisuals(){
+      [...els.diceRow.children].forEach(die => setDieFace(die,1));
+    }
+
+    function setDieFace(die, value){
+      die.innerHTML = "";
+      for(const pos of pipMap[value]){
+        const pip = document.createElement("span");
+        pip.className = `pip pos-${pos}`;
+        die.appendChild(pip);
+      }
+      die.dataset.value = String(value);
+      die.setAttribute("aria-label", `Die showing ${value}`);
+    }
+
+    function buy(type){
+      if(rolling || state.finished) return;
+      const isEven = type === "even";
+      const cost = isEven ? cfg.evenCost : cfg.oddCost;
+      if(state.bankroll < cost) return;
+
+      state.bankroll -= cost;
+      state.invested += cost;
+      if(isEven) state.evenTickets++;
+      else state.oddTickets++;
+      render();
+    }
+
+    function remove(type){
+      if(rolling || state.finished) return;
+      const isEven = type === "even";
+      if(isEven && state.evenTickets <= 0) return;
+      if(!isEven && state.oddTickets <= 0) return;
+
+      const cost = isEven ? cfg.evenCost : cfg.oddCost;
+      state.bankroll += cost;
+      state.invested -= cost;
+      if(isEven) state.evenTickets--;
+      else state.oddTickets--;
+      render();
+    }
+
+    function rollDie(){
+      return Math.floor(Math.random()*6)+1;
+    }
+
+    function animateDice(finalValues){
+      return new Promise(resolve => {
+        rolling = true;
+        render();
+
+        const dice = [...els.diceRow.children];
+        dice.forEach(d => d.classList.add("rolling"));
+
+        let ticks = 0;
+        const interval = setInterval(() => {
+          dice.forEach(d => setDieFace(d, rollDie()));
+          ticks++;
+          if(ticks >= 9){
+            clearInterval(interval);
+            dice.forEach((d,i) => {
+              setDieFace(d, finalValues[i]);
+              d.classList.remove("rolling");
+            });
+            setTimeout(resolve, 100);
+          }
+        }, 70);
+      });
+    }
+
+    async function playTurn(){
+      if(rolling || state.finished) return;
+      if(state.evenTickets + state.oddTickets === 0) return;
+
+      const before = state.bankroll + state.invested;
+      const ticketEven = state.evenTickets;
+      const ticketOdd = state.oddTickets;
+      const invested = state.invested;
+
+      const dice = Array.from({length:cfg.dice}, rollDie);
+      await animateDice(dice);
+
+      const product = dice.reduce((a,b)=>a*b,1);
+      const isEven = product % 2 === 0;
+      const payout = isEven ? ticketEven * cfg.evenPayout : ticketOdd * cfg.oddPayout;
+
+      state.bankroll += payout;
+      const after = state.bankroll;
+      const delta = after - before;
+
+      state.history.push({
+        turn: state.turn,
+        dice,
+        product,
+        result: isEven ? "EVEN" : "ODD",
+        even: ticketEven,
+        odd: ticketOdd,
+        invested,
+        payout,
+        before,
+        after,
+        delta
+      });
+
+      els.outcomeBig.textContent = `${product.toLocaleString("en-IN")} · ${isEven ? "EVEN" : "ODD"}`;
+      els.outcomeSmall.textContent =
+        `${dice.join(" × ")} · Payout ${money(payout)} · ${delta >= 0 ? "+" : ""}${money(delta)}`;
+
+      state.turn++;
+      state.evenTickets = 0;
+      state.oddTickets = 0;
+      state.invested = 0;
+
+      if(state.bankroll >= cfg.target){
+        state.finished = true;
+        setToast(`Target reached with ${money(state.bankroll)} on turn ${state.turn-1}.`, "win");
+      } else if(state.turn > cfg.turns){
+        state.finished = true;
+        setToast(`Game over. Final bankroll: ${money(state.bankroll)}.`, "lose");
+      } else {
+        setToast(`Turn ${state.turn-1} complete. Choose your next position.`);
+      }
+
+      rolling = false;
+      render();
+    }
+
+    function setToast(text, kind=""){
+      els.statusToast.textContent = text;
+      els.statusToast.className = "toast" + (kind ? " " + kind : "");
+    }
+
+    function renderHistory(){
+      if(!state.history.length){
+        els.historyList.innerHTML = '<div class="empty">No rounds yet.</div>';
+        return;
+      }
+
+      els.historyList.innerHTML = state.history.slice().reverse().map(h => {
+        const cls = h.delta >= 0 ? "plus" : "minus";
+        const sign = h.delta >= 0 ? "+" : "";
+        return `
+          <div class="history-item">
+            <div class="turn-pill">T${h.turn}</div>
+            <div class="hist-main">
+              <strong>${h.result} · ${h.dice.join(" × ")} = ${h.product}</strong>
+              <span>${h.even}E + ${h.odd}O · payout ${money(h.payout)}</span>
+            </div>
+            <div class="delta ${cls}">${sign}${money(h.delta)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function render(){
+      els.bankroll.textContent = money(state.bankroll);
+      els.turn.textContent = Math.min(state.turn, cfg.turns);
+      els.turnMax.textContent = cfg.turns;
+      els.targetStat.textContent = money(cfg.target);
+      els.investedStat.textContent = money(state.invested);
+
+      els.evenCount.textContent = state.evenTickets;
+      els.oddCount.textContent = state.oddTickets;
+
+      els.evenCostLabel.textContent = `Costs ${money(cfg.evenCost)}`;
+      els.oddCostLabel.textContent = `Costs ${money(cfg.oddCost)}`;
+      els.evenRewardLabel.textContent = `Pays ${money(cfg.evenPayout)}`;
+      els.oddRewardLabel.textContent = `Pays ${money(cfg.oddPayout)}`;
+
+      els.cashAfter.textContent = money(state.bankroll);
+      els.ifEven.textContent = money(state.bankroll + state.evenTickets * cfg.evenPayout);
+      els.ifOdd.textContent = money(state.bankroll + state.oddTickets * cfg.oddPayout);
+
+      const pct = Math.max(0, Math.min(100, (state.bankroll/cfg.target)*100));
+      els.progressBar.style.width = pct + "%";
+      els.progressText.textContent = pct.toFixed(pct < 10 ? 1 : 0) + "%";
+
+      els.evenPlus.disabled = rolling || state.finished || state.bankroll < cfg.evenCost;
+      els.oddPlus.disabled = rolling || state.finished || state.bankroll < cfg.oddCost;
+      els.evenMinus.disabled = rolling || state.finished || state.evenTickets === 0;
+      els.oddMinus.disabled = rolling || state.finished || state.oddTickets === 0;
+      els.rollBtn.disabled = rolling || state.finished || (state.evenTickets + state.oddTickets === 0);
+
+      els.rollBtn.textContent = rolling ? "ROLLING…" : "ROLL DICE";
+
+      renderHistory();
+    }
+
+    els.evenPlus.addEventListener("click",()=>buy("even"));
+    els.oddPlus.addEventListener("click",()=>buy("odd"));
+    els.evenMinus.addEventListener("click",()=>remove("even"));
+    els.oddMinus.addEventListener("click",()=>remove("odd"));
+    els.rollBtn.addEventListener("click",playTurn);
+    els.newGameBtn.addEventListener("click",()=>startGame(true));
+    els.restartBtn.addEventListener("click",()=>startGame(false));
+
+    cfg = readConfig();
+    startGame(false);
+  })();
+  </script>
+</body>
+</html>
